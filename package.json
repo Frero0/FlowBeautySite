@@ -12,6 +12,7 @@
     "prisma:generate": "prisma generate",
     "db:seed": "prisma db seed"
   },
+  "postinstall": "prisma generate",
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "clsx": "^2.1.1",
