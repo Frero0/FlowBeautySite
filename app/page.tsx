@@ -10,6 +10,7 @@ import { HeroCarousel } from "@/components/HeroCarousel";
 import { Header } from "@/components/Header";
 import { prisma } from "@/lib/prisma";
 import { PriceType } from "@prisma/client";
+export const dynamic = "force-dynamic";
 
 const heroImages = [
   {
