@@ -12,5 +12,5 @@ export const weeklySchedule: OpeningWindow[] = [
   { day: 6, open: "09:00", close: "13:00" } // Saturday
 ];
 
-export const slotIntervalMinutes = 30;
+export const slotIntervalMinutes = 15;
 export const defaultBufferMinutes = 0;

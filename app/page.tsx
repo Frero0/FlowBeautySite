@@ -1,18 +1,68 @@
 import Image from "next/image";
-import { categories, featuredServices } from "@/data/services";
-import { reviews } from "@/data/reviews";
+import { categories } from "@/data/services";
 import { siteInfo, openingHours } from "@/data/site";
+import { GOOGLE_REVIEWS_URL } from "@/data/googleReviews";
 import { BookingForm } from "@/components/BookingForm";
+import { GoogleMapEmbed } from "@/components/GoogleMapEmbed";
+import { ReviewsCarousel } from "@/components/ReviewsCarousel";
+import { CategoriesSpotlight } from "@/components/CategoriesSpotlight";
+import { HeroCarousel } from "@/components/HeroCarousel";
+import { Header } from "@/components/Header";
+import { prisma } from "@/lib/prisma";
+import { PriceType } from "@prisma/client";
 
-const navigation = [
-  { href: "#servizi", label: "Servizi" },
-  { href: "#prezzi", label: "Prezzi" },
-  { href: "#recensioni", label: "Recensioni" },
-  { href: "#chi-siamo", label: "Chi siamo" },
-  { href: "#contatti", label: "Contatti" }
+const heroImages = [
+  {
+    src: "/hero-viso.jpg",
+    alt: "Trattamento viso professionale"
+  },
+  {
+    src: "/hero-mani.jpg",
+    alt: "Manicure elegante e curata"
+  },
+  {
+    src: "/hero-epilazione.jpg",
+    alt: "Ambiente del centro estetico Flow Beauty"
+  }
 ];
 
-export default function Page() {
+type FormService = {
+  id: string;
+  name: string;
+  priceLabel: string;
+};
+
+const formatPriceLabel = (priceType: PriceType, from?: number | null, to?: number | null) => {
+  if (priceType === "RANGE" && from && to) return `€${from}–€${to}`;
+  if (priceType === "FROM" && from) return `da €${from}`;
+  if (priceType === "FIXED" && from) return `€${from}`;
+  return "Prezzo su richiesta";
+};
+
+export default async function Page() {
+  const dbServices = await prisma.service.findMany({
+    where: { isActive: true },
+    select: {
+      id: true,
+      name: true,
+      priceType: true,
+      priceFrom: true,
+      priceTo: true
+    },
+    orderBy: [{ isFeatured: "desc" }, { name: "asc" }]
+  });
+
+  const defaultStaff = await prisma.staffMember.findFirst({
+    where: { isActive: true },
+    orderBy: { createdAt: "asc" }
+  });
+
+  const formServices: FormService[] = dbServices.map((svc) => ({
+    id: svc.id,
+    name: svc.name,
+    priceLabel: formatPriceLabel(svc.priceType, svc.priceFrom, svc.priceTo)
+  }));
+
   return (
     <div className="relative">
       <div className="absolute inset-0 -z-10 bg-hero-radial" />
@@ -20,70 +70,37 @@ export default function Page() {
       <main>
         <Hero />
         <Categories />
-        <Featured />
-        <BookingSection />
+        <WhyChooseUs />
         <Reviews />
+        <BookingSection
+          formServices={formServices}
+          defaultStaffId={defaultStaff?.id ?? ""}
+          staffName={defaultStaff?.name ?? "Staff"}
+        />
         <About />
         <Contact />
       </main>
-      <Footer />
     </div>
-  );
-}
-
-function Header() {
-  return (
-    <header className="sticky top-0 z-30 backdrop-blur bg-white/70 border-b border-ink/5">
-      <div className="container flex items-center justify-between py-3">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-ink text-white grid place-items-center font-display text-lg">
-            F
-          </div>
-          <div>
-            <p className="font-display text-lg leading-tight text-ink">Flow Beauty Estetica</p>
-            <p className="text-xs text-ink/70">Pinerolo</p>
-          </div>
-        </div>
-        <nav className="hidden md:flex items-center gap-6 text-sm text-ink/80">
-          {navigation.map((item) => (
-            <a key={item.href} href={item.href} className="hover:text-ink">
-              {item.label}
-            </a>
-          ))}
-        </nav>
-        <div className="flex items-center gap-2">
-          <a
-            href="#prenota"
-            className="hidden sm:inline-flex rounded-full border border-ink/15 px-3 py-2 text-xs font-semibold text-ink hover:border-ink/30"
-          >
-            WhatsApp
-          </a>
-          <a
-            href="#prenota"
-            className="rounded-full bg-ink px-4 py-2 text-xs font-semibold text-white shadow-soft hover:bg-ink/90"
-          >
-            Prenota ora
-          </a>
-        </div>
-      </div>
-    </header>
   );
 }
 
 function Hero() {
   return (
-    <section className="section">
-      <div className="container grid gap-12 lg:grid-cols-2 lg:items-center">
-        <div className="space-y-6">
-          <p className="text-sm uppercase tracking-[0.08em] text-ink/60">Centro estetico a Pinerolo</p>
-          <h1 className="font-display text-4xl leading-tight text-ink md:text-5xl">
-            Bellezza e benessere, con calma e cura dei dettagli.
-          </h1>
-          <p className="text-lg text-ink/80">
-            Trattamenti viso, unghie, laminazione ed epilazione in un ambiente elegante.
-            Prenota online in pochi click, orari prolungati dal martedì al sabato.
-          </p>
-          <div className="flex flex-wrap gap-3">
+    <section className="section pt-8">
+      <div className="container space-y-8">
+        <HeroCarousel images={heroImages} />
+        <div className="space-y-6 text-center md:space-y-5">
+          <div className="space-y-2">
+            <p className="text-sm uppercase tracking-[0.08em] text-ink/60">Centro estetico a Pinerolo</p>
+            <h1 className="font-display text-3xl leading-tight text-ink md:text-[2.8rem]">
+              Bellezza e benessere, con calma e cura dei dettagli.
+            </h1>
+            <p className="mx-auto max-w-3xl text-base text-ink/80 md:text-lg">
+              Trattamenti viso, unghie, laminazione ed epilazione in un ambiente elegante.
+              Prenota online in pochi click, orari prolungati dal martedì al sabato.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <a
               href="#prenota"
               className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-white shadow-soft hover:bg-ink/90"
@@ -97,7 +114,7 @@ function Hero() {
               Scopri i trattamenti
             </a>
           </div>
-          <div className="flex flex-wrap gap-3 text-sm text-ink/70">
+          <div className="flex flex-wrap justify-center gap-3 text-sm text-ink/70">
             <span className="rounded-full bg-white/80 px-3 py-2 shadow-soft ring-1 ring-ink/5">
               5,0 ★ ({siteInfo.reviewsCount} recensioni)
             </span>
@@ -109,36 +126,6 @@ function Hero() {
             </span>
           </div>
         </div>
-        <div className="relative grid gap-4 sm:grid-cols-2">
-          <div className="relative overflow-hidden rounded-3xl bg-white/60 p-2 shadow-card ring-1 ring-ink/5">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-nude-100">
-              <Image
-                src="https://cdn1.treatwell.net/images/view/v2.i13794551.w720.h480.x48FACDC2/"
-                alt="Trattamento viso"
-                fill
-                className="object-cover"
-              />
-            </div>
-            <div className="mt-3 space-y-1 px-1">
-              <p className="text-sm font-semibold text-ink">Glow & relax</p>
-              <p className="text-xs text-ink/70">Trattamenti viso su misura</p>
-            </div>
-          </div>
-          <div className="relative overflow-hidden rounded-3xl bg-white/60 p-2 shadow-card ring-1 ring-ink/5 sm:translate-y-10">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-nude-100">
-              <Image
-                src="https://cdn1.treatwell.net/images/view/v2.i13794553.w720.h480.x342AD42E/"
-                alt="Manicure di precisione"
-                fill
-                className="object-cover"
-              />
-            </div>
-            <div className="mt-3 space-y-1 px-1">
-              <p className="text-sm font-semibold text-ink">Dettaglio perfetto</p>
-              <p className="text-xs text-ink/70">Unghie curate, fini ed eleganti</p>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );
@@ -146,7 +133,7 @@ function Hero() {
 
 function Categories() {
   return (
-    <section className="section" id="servizi">
+    <section className="section scroll-mt-24" id="servizi">
       <div className="container space-y-8">
         <div className="max-w-2xl space-y-2">
           <p className="text-sm font-semibold text-accent">Servizi</p>
@@ -155,89 +142,96 @@ function Categories() {
             Dal risultato immediato alla routine di cura: viso, unghie, laminazione ed epilazione, con prezzi chiari.
           </p>
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {categories.map((cat) => (
-            <div
-              key={cat.id}
-              className="group rounded-2xl bg-white/80 p-5 shadow-soft ring-1 ring-ink/5 transition hover:-translate-y-1 hover:shadow-card"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <h3 className="font-display text-xl text-ink">{cat.name}</h3>
-                  <p className="text-sm text-ink/70">{cat.description}</p>
-                </div>
-                <span className="rounded-full bg-nude-100 px-3 py-1 text-xs text-ink/70">
-                  {cat.services.length} tratt.
-                </span>
-              </div>
-              <div className="mt-4 space-y-2 text-sm text-ink/80">
-                {cat.services.slice(0, 3).map((svc) => (
-                  <div key={svc.id} className="flex justify-between">
-                    <span>{svc.name}</span>
-                    <span className="text-ink/70">{svc.price}</span>
-                  </div>
-                ))}
-                {cat.services.length > 3 && (
-                  <p className="text-xs text-ink/60">+ altri {cat.services.length - 3}</p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        <CategoriesSpotlight categories={categories} />
       </div>
     </section>
   );
 }
 
-function Featured() {
+const whyReasons = [
+  "Specializzazione in trattamenti viso e corpo",
+  "Servizi di estetica completi",
+  "Ambiente rilassante e professionale",
+  "Solo professionisti qualificati",
+  "Recensioni eccellenti e clienti soddisfatte",
+  "Nel cuore di Pinerolo, con cura dei dettagli"
+];
+
+const whyStats = [
+  { value: "20", label: "ANNI DI ESPERIENZA" },
+  { value: "1", label: "OPERATRICE" },
+  { value: "5.0", label: "MEDIA RECENSIONI" }
+];
+
+function WhyChooseUs() {
   return (
     <section className="section" id="prezzi">
-      <div className="container space-y-8">
-        <div className="max-w-2xl space-y-2">
-          <p className="text-sm font-semibold text-accent">Più prenotati</p>
-          <h2 className="font-display text-3xl text-ink">Trattamenti in evidenza</h2>
-          <p className="text-ink/70">
-            Soluzioni scelte spesso dalle clienti: precise, curate, con beneficio immediato.
-          </p>
+      <div className="container grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+        <div className="rounded-[32px] bg-white/80 p-4 shadow-card ring-1 ring-ink/5">
+          <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-nude-100">
+            <Image
+              src="/centro-flow.jpg"
+              alt="Interno del centro Flow Beauty Estetica"
+              fill
+              sizes="(min-width: 1024px) 45vw, 100vw"
+              className="object-cover"
+              priority={false}
+            />
+          </div>
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {featuredServices.map((svc) => (
-            <div
-              key={svc.id}
-              className="rounded-2xl bg-white/85 p-5 shadow-soft ring-1 ring-ink/5"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.1em] text-ink/50">{svc.category}</p>
-                  <h3 className="font-display text-xl text-ink">{svc.name}</h3>
-                </div>
-                <span className="rounded-full bg-nude-100 px-3 py-1 text-xs text-ink/70">
-                  {svc.duration}
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent">
+              Alleati per la tua bellezza
+            </p>
+            <h2 className="font-display text-3xl text-ink">Perché sceglierci</h2>
+            <p className="text-sm text-ink/70">
+              Ritualità slow beauty, consulenze personalizzate e protocolli accurati per risultati visibili e delicati.
+            </p>
+          </div>
+          <ul className="space-y-3 text-sm text-ink/80">
+            {whyReasons.map((reason) => (
+              <li key={reason} className="flex items-start gap-3">
+                <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-nude-100 text-[11px] text-ink">
+                  ✓
                 </span>
+                <span>{reason}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {whyStats.map((stat) => (
+              <div key={stat.label} className="rounded-2xl bg-white/70 p-4 text-center shadow-soft ring-1 ring-ink/5">
+                <p className="font-display text-3xl text-ink">{stat.value}</p>
+                <p className="mt-1 text-xs font-semibold tracking-[0.2em] text-ink/60">{stat.label}</p>
               </div>
-              <p className="mt-2 text-sm text-ink/70">{svc.description}</p>
-              <div className="mt-4 flex items-center justify-between">
-                <span className="text-base font-semibold text-ink">{svc.price}</span>
-                <a
-                  href="#prenota"
-                  className="text-sm font-semibold text-ink underline underline-offset-4 hover:text-ink/80"
-                >
-                  Prenota
-                </a>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          <a
+            href="#prenota"
+            className="inline-flex items-center justify-center rounded-full bg-ink px-6 py-3 text-sm font-semibold text-white shadow-soft hover:bg-ink/90"
+          >
+            Prenota ora
+          </a>
         </div>
       </div>
     </section>
   );
 }
 
-function BookingSection() {
+function BookingSection({
+  formServices,
+  defaultStaffId,
+  staffName
+}: {
+  formServices: FormService[];
+  defaultStaffId: string;
+  staffName: string;
+}) {
   return (
     <section className="section" id="prenota">
-      <div className="container grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
-        <div className="space-y-4">
+      <div className="container space-y-8">
+        <div className="space-y-4 max-w-3xl">
           <p className="text-sm font-semibold text-accent">Prenotazione</p>
           <h2 className="font-display text-3xl text-ink">Prenotare è semplice</h2>
           <p className="text-ink/70">
@@ -256,7 +250,11 @@ function BookingSection() {
             ]} />
           </div>
         </div>
-        <BookingForm />
+        <BookingForm
+          services={formServices}
+          defaultStaffId={defaultStaffId}
+          staffName={staffName}
+        />
       </div>
     </section>
   );
@@ -279,32 +277,32 @@ function Reviews() {
   return (
     <section className="section" id="recensioni">
       <div className="container space-y-8">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div className="space-y-2">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="space-y-3">
             <p className="text-sm font-semibold text-accent">Recensioni</p>
             <h2 className="font-display text-3xl text-ink">Chi ci sceglie, lo racconta</h2>
             <p className="text-ink/70">
               Professionalità, ambiente elegante e attenzione alle richieste: sono i temi che tornano più spesso.
             </p>
           </div>
-          <a
-            href="#prenota"
-            className="inline-flex items-center rounded-full bg-ink px-4 py-2 text-xs font-semibold text-white hover:bg-ink/90"
-          >
-            Prenota ora
-          </a>
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href={GOOGLE_REVIEWS_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center rounded-full border border-ink/20 px-4 py-2 text-xs font-semibold text-ink hover:border-ink/40"
+            >
+              Leggi tutte su Google
+            </a>
+            <a
+              href="#prenota"
+              className="inline-flex items-center rounded-full bg-ink px-4 py-2 text-xs font-semibold text-white hover:bg-ink/90"
+            >
+              Prenota ora
+            </a>
+          </div>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {reviews.map((review) => (
-            <div key={review.author} className="rounded-2xl bg-white/80 p-4 shadow-soft ring-1 ring-ink/5">
-              <div className="flex items-center justify-between">
-                <p className="font-semibold text-ink">{review.author}</p>
-                <span className="text-sm text-ink/70">★ {review.rating}</span>
-              </div>
-              <p className="mt-2 text-sm text-ink/75">{review.body}</p>
-            </div>
-          ))}
-        </div>
+        <ReviewsCarousel />
       </div>
     </section>
   );
@@ -379,9 +377,7 @@ function Contact() {
           </div>
         </div>
         <div className="rounded-3xl bg-white/80 p-3 shadow-card ring-1 ring-ink/5">
-          <div className="aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-nude-100 to-nude-50 grid place-items-center text-ink/60">
-            <p className="text-sm">Mappa qui (embed Google Maps)</p>
-          </div>
+          <GoogleMapEmbed address={siteInfo.address} />
           <div className="mt-3 flex flex-wrap gap-3">
             <a
               href={`https://wa.me/${siteInfo.whatsapp}`}
@@ -399,32 +395,5 @@ function Contact() {
         </div>
       </div>
     </section>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="border-t border-ink/10 bg-white/80 py-8">
-      <div className="container flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="font-display text-lg text-ink">Flow Beauty Estetica</p>
-          <p className="text-sm text-ink/70">{siteInfo.address}</p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <a
-            href="#prenota"
-            className="rounded-full bg-ink px-5 py-2 text-sm font-semibold text-white hover:bg-ink/90"
-          >
-            Prenota ora
-          </a>
-          <a
-            href="#servizi"
-            className="rounded-full border border-ink/15 px-5 py-2 text-sm font-semibold text-ink hover:border-ink/30"
-          >
-            Servizi
-          </a>
-        </div>
-      </div>
-    </footer>
   );
 }

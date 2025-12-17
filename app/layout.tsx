@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
+import { Footer } from "@/components/Footer";
+import { BackToTop } from "@/components/BackToTop";
+import { ScrollRestoration } from "@/components/ScrollRestoration";
 
 const body = Inter({
   subsets: ["latin"],
@@ -25,7 +28,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="it" className={`${body.variable} ${display.variable}`}>
-      <body className="bg-nude-50 text-ink antialiased">{children}</body>
+      <body className="bg-nude-50 text-ink antialiased">
+        <div className="flex min-h-screen flex-col">
+          <div className="flex-1">{children}</div>
+          <Footer />
+        </div>
+        <BackToTop />
+        <ScrollRestoration />
+      </body>
     </html>
   );
 }
