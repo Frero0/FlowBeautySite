@@ -34,7 +34,9 @@ const dayOfWeekInTz = (date: string, tz: string) => {
 const toUtcFromLocal = (date: string, time: string, tz: string) =>
   fromZonedTime(`${date}T${time}:00`, tz);
 
-async function getSettings(client: PrismaClient) {
+type DbClient = PrismaClient | Prisma.TransactionClient;
+
+async function getSettings(client: DbClient) {
   const existing = await client.businessSettings.findFirst();
   if (existing) return existing;
   return client.businessSettings.create({
@@ -42,7 +44,7 @@ async function getSettings(client: PrismaClient) {
   });
 }
 
-async function getService(client: PrismaClient, serviceId: string) {
+async function getService(client: DbClient, serviceId: string) {
   const service = await client.service.findFirst({
     where: { id: serviceId, isActive: true }
   });
@@ -52,7 +54,7 @@ async function getService(client: PrismaClient, serviceId: string) {
   return service;
 }
 
-async function getStaff(client: PrismaClient, staffId?: string) {
+async function getStaff(client: DbClient, staffId?: string) {
   if (staffId) {
     const staff = await client.staffMember.findFirst({
       where: { id: staffId, isActive: true }
@@ -88,7 +90,7 @@ export async function getAvailability(params: {
   serviceId: string;
   staffId?: string;
   date: string;
-  client?: PrismaClient;
+  client?: DbClient;
 }): Promise<AvailabilityResult> {
   const client = params.client ?? prisma;
   const settings = await getSettings(client);
