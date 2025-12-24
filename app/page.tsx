@@ -18,12 +18,16 @@ const heroImages = [
     alt: "Trattamento viso professionale"
   },
   {
-    src: "/hero-mani.jpg",
-    alt: "Manicure elegante e curata"
+    src: "/hero-mani.webp",
+    alt: "Manicure e cura delle mani"
   },
   {
-    src: "/hero-epilazione.jpg",
-    alt: "Ambiente del centro estetico Flow Beauty"
+    src: "/hero-epilazione.webp",
+    alt: "Epilazione professionale"
+  },
+  {
+    src: "/hero-makeup.webp",
+    alt: "Make-up e bellezza professionale"
   }
 ];
 
@@ -172,7 +176,7 @@ function WhyChooseUs() {
           <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-nude-100">
             <Image
               src="/centro-flow.jpg"
-              alt="Interno del centro Flow Beauty Estetica"
+              alt="Centro estetico Flow Beauty a Pinerolo"
               fill
               sizes="(min-width: 1024px) 45vw, 100vw"
               className="object-cover"
@@ -335,8 +339,8 @@ function About() {
         <div className="rounded-3xl bg-white/70 p-3 shadow-card ring-1 ring-ink/5">
           <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-nude-100">
             <Image
-              src="https://scontent-fco2-1.xx.fbcdn.net/v/t39.30808-6/288696193_116102211121898_1358662396718067748_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=CHjvvTDWOT8Q7kNvwGSWSs-&_nc_oc=AdloQKPA-1c7wOP5DHX9DQv3tRfz-9o-npPowefq9pnOksppvHLejR7F7sCHashY_Qs&_nc_zt=23&_nc_ht=scontent-fco2-1.xx&_nc_gid=461icjskniDgaWXOuaBcdg&oh=00_AfkH4G47VmI-MWZpUmOxAkg2ocaxv8gs_bVJRCgsvhYGiA&oe=69472AC8"
-              alt="Titolare del centro"
+              src="/mara-flow.jpg"
+              alt="Mara – fondatrice di Flow Beauty Estetica"
               fill
               className="object-cover"
             />

@@ -33,7 +33,7 @@ export function Footer() {
             <div className="flex flex-wrap items-center gap-4">
               <div className="rounded-2xl bg-nude-100 p-2.5 ring-1 ring-ink/5">
                 <Image
-                  src="/logo-flow.png"
+                  src="/logo-flow.jpg"
                   alt="Flow Beauty Estetica logo"
                   width={56}
                   height={56}
